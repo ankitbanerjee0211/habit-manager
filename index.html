@@ -76,7 +76,7 @@
 
     <script>
         // REPLACE THIS WITH YOUR NEW DEPLOYMENT URL
-        const SHEET_URL = "https://script.google.com/macros/s/AKfycbyiiPA63xZDP8sGqWTlXZfw8QGusbuEfu-sdH_rh6R1pmVU9bfbyEOPR-wmk4e1U34OvA/exec"; 
+        const SHEET_URL = "https://script.google.com/macros/s/AKfycbyQUUahj95o55z1XvMCIa0KEMDHcbMsQ0b5ETPApTzvpsrqcx6z70TfZ1IPIda1b_l1Cg/exec"; 
         
         let data = { repetitive: [], specific: [], history: {}, currentView: 'month' };
 
@@ -89,28 +89,30 @@
     try {
         if(action === 'save') {
             statusEl.innerText = "☁️ SAVING...";
-            // We use 'no-cors' to bypass the security block
             await fetch(SHEET_URL, {
                 method: "POST",
                 mode: "no-cors", 
-                body: JSON.stringify(data)
+                body: JSON.stringify(data) 
             });
+            // Since no-cors doesn't return a response, we assume success after the fetch
             statusEl.innerText = "☁️ SAVED TO DRIVE";
         } else {
             statusEl.innerText = "☁️ LOADING...";
             const res = await fetch(SHEET_URL);
             const cloudData = await res.json();
-            if(cloudData && cloudData.history) {
+            
+            // Check if there is actually data in the cloud
+            if(cloudData && (cloudData.repetitive || cloudData.history)) {
                 data = cloudData;
                 statusEl.innerText = "☁️ CLOUD SYNCED";
-                render(); // Refresh the UI with new data
+                render(); // This is the key! It draws your habits once they arrive.
             } else {
                 statusEl.innerText = "☁️ NEW DATABASE";
             }
         }
     } catch(e) { 
         statusEl.innerText = "☁️ LOCAL MODE";
-        console.log("Sync Note:", e);
+        console.error("Sync Error:", e);
     }
 }
 
