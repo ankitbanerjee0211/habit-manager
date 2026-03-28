@@ -76,7 +76,7 @@
 
     <script>
         // REPLACE THIS WITH YOUR NEW DEPLOYMENT URL
-        const SHEET_URL = "https://script.google.com/macros/s/AKfycbyQUUahj95o55z1XvMCIa0KEMDHcbMsQ0b5ETPApTzvpsrqcx6z70TfZ1IPIda1b_l1Cg/exec"; 
+        const SHEET_URL = "https://script.google.com/macros/s/AKfycbxNxLk6QIjBU0D0DLBT8R9Gz8VVbc272OI--xDAQ4aBM5B8jO-I2dboiX5avVyzbYF8VQ/exec"; 
         
         let data = { repetitive: [], specific: [], history: {}, currentView: 'month' };
 
@@ -89,29 +89,30 @@
     try {
         if(action === 'save') {
             statusEl.innerText = "☁️ SAVING...";
+            // We use 'text/plain' to sneak past the CORS wall
             await fetch(SHEET_URL, {
                 method: "POST",
-                mode: "no-cors", 
-                body: JSON.stringify(data) 
+                mode: "no-cors",
+                body: JSON.stringify(data)
             });
-            // Since no-cors doesn't return a response, we assume success after the fetch
-            statusEl.innerText = "☁️ SAVED TO DRIVE";
+            // no-cors doesn't give a response, so we wait 1 sec then show success
+            setTimeout(() => { statusEl.innerText = "☁️ SAVED TO DRIVE"; }, 800);
         } else {
             statusEl.innerText = "☁️ LOADING...";
             const res = await fetch(SHEET_URL);
             const cloudData = await res.json();
             
-            // Check if there is actually data in the cloud
             if(cloudData && (cloudData.repetitive || cloudData.history)) {
                 data = cloudData;
                 statusEl.innerText = "☁️ CLOUD SYNCED";
-                render(); // This is the key! It draws your habits once they arrive.
+                render(); // This MUST be here to draw the habits
             } else {
                 statusEl.innerText = "☁️ NEW DATABASE";
+                render();
             }
         }
     } catch(e) { 
-        statusEl.innerText = "☁️ LOCAL MODE";
+        statusEl.innerText = "☁️ CONNECTION ERROR";
         console.error("Sync Error:", e);
     }
 }
