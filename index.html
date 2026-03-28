@@ -26,18 +26,16 @@
         .c-green { background: var(--green); color: #000; }
         .c-darkgreen { background: #008f11; color: #fff; }
         .selected-day { outline: 2px solid #fff; outline-offset: 1px; box-shadow: 0 0 8px #fff; }
-        .input-box { background: #000; font-size: 0.95rem; outline: none; transition: 0.3s; }
-        .input-ritual { border: 2px solid #0056b3; } .input-ritual:focus { border-color: #00d4ff; box-shadow: 0 0 8px #00d4ff44; }
-        .input-task { border: 2px solid #6a0dad; } .input-task:focus { border-color: #bf00ff; box-shadow: 0 0 8px #bf00ff44; }
-        input[disabled], button[disabled] { opacity: 0.1; cursor: not-allowed; }
+        .input-ritual { border: 2px solid #0056b3; background: #000; outline: none; }
+        .input-task { border: 2px solid #6a0dad; background: #000; outline: none; }
     </style>
 </head>
 <body class="p-2">
     <div class="app-container space-y-4">
         <div class="sticky-header text-center">
-            <h1 class="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 uppercase italic">Simple Habit Manager</h1>
-            <div id="syncStatus" class="text-[9px] font-black text-green-400 mt-1 opacity-60">☁️ DISCONNECTED</div>
-            <div class="flex flex-col md:flex-row justify-between items-center gap-3 bg-[#0d1117] p-4 rounded-2xl border border-[#1f2328] mt-3">
+            <h1 class="text-xl md:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 uppercase italic">Simple Habit Manager</h1>
+            <div id="syncStatus" class="text-[9px] font-black text-green-400 mt-1 opacity-60">☁️ CHECKING CLOUD...</div>
+            <div class="flex flex-col md:flex-row justify-between items-center gap-3 bg-[#0d1117] p-4 rounded-2xl border border-[#1f2328] mt-2">
                 <div class="text-left">
                     <h2 id="currentDateDisplay" class="text-lg font-bold">...</h2>
                     <p class="text-yellow-400 font-black text-[10px] uppercase tracking-widest mt-1">🔥 <span id="streakCount">0</span> Day Streak</p>
@@ -49,7 +47,7 @@
         <div class="bg-[#0d1117] p-4 rounded-2xl border border-[#1f2328]">
             <div class="flex justify-between items-center mb-3">
                 <div class="flex gap-1 bg-black p-1 rounded-lg">
-                    <button onclick="changeView('month')" id="btn-month" class="px-4 py-1 text-[10px] font-black rounded bg-green-400 text-black">MONTH</button>
+                    <button onclick="changeView('month')" id="btn-month" class="px-4 py-1 text-[10px] font-black rounded">MONTH</button>
                     <button onclick="changeView('year')" id="btn-year" class="px-4 py-1 text-[10px] font-black rounded">YEAR</button>
                 </div>
                 <h2 id="viewHeading" class="text-[10px] font-black uppercase text-gray-500"></h2>
@@ -59,49 +57,59 @@
 
         <div class="grid lg:grid-cols-2 gap-4">
             <div class="bg-[#0d1117] rounded-2xl border border-[#1f2328] overflow-hidden">
-                <div class="px-4 py-2 bg-[#161b22] text-[10px] font-black text-blue-400 uppercase tracking-widest">🔄 Daily Rituals</div>
-                <div class="p-4 space-y-3">
-                    <div class="flex gap-2"><input id="repInput" type="text" class="input-box input-ritual flex-1 p-2 rounded-xl" placeholder="Habit..."><button onclick="addTask('repetitive')" class="bg-blue-600 w-10 h-10 rounded-xl font-black">+</button></div>
+                <div class="px-4 py-2 bg-[#161b22] text-[10px] font-black text-blue-400 uppercase tracking-widest">🔄 Rituals</div>
+                <div class="p-3 space-y-3">
+                    <div class="flex gap-2"><input id="repInput" type="text" class="input-ritual flex-1 p-2 rounded-xl text-xs" placeholder="Habit..."><button onclick="addTask('repetitive')" class="bg-blue-600 w-10 h-10 rounded-xl font-black">+</button></div>
                     <ul id="repList" class="divide-y divide-[#1f2328]"></ul>
                 </div>
             </div>
             <div class="bg-[#0d1117] rounded-2xl border border-[#1f2328] overflow-hidden">
-                <div class="px-4 py-2 bg-[#161b22] text-[10px] font-black text-purple-400 uppercase tracking-widest">🎯 Specific Tasks</div>
-                <div class="p-4 space-y-3">
-                    <div class="flex gap-2"><input id="specInput" type="text" class="input-box input-task flex-1 p-2 rounded-xl" placeholder="Task..."><button onclick="addTask('specific')" class="bg-purple-600 w-10 h-10 rounded-xl font-black">+</button></div>
+                <div class="px-4 py-2 bg-[#161b22] text-[10px] font-black text-purple-400 uppercase tracking-widest">🎯 Tasks</div>
+                <div class="p-3 space-y-3">
+                    <div class="flex gap-2"><input id="specInput" type="text" class="input-task flex-1 p-2 rounded-xl text-xs" placeholder="Task..."><button onclick="addTask('specific')" class="bg-purple-600 w-10 h-10 rounded-xl font-black">+</button></div>
                     <ul id="specList" class="divide-y divide-[#1f2328]"></ul>
                 </div>
             </div>
         </div>
-        <div class="text-center opacity-40 py-4 border-t border-[#1f2328] text-[9px] font-black uppercase">Created by Ankit Banerjee</div>
+        <div class="text-center opacity-40 py-2 text-[10px] font-black uppercase">Ankit Banerjee Edition</div>
     </div>
 
     <script>
-        const SHEET_URL = "https://script.google.com/macros/s/AKfycbyZBoYrin-jLzBy8wRFQSILjRziyXRQdd8nKivcpk-UEL10CfuRwaDobSfod7XE8cO1_A/exec"; 
+        // REPLACE THIS WITH YOUR NEW DEPLOYMENT URL
+        const SHEET_URL = "https://script.google.com/macros/s/AKfycbyM2vHQJlRrr2EQC39X_6ngUU2h7NtgucLCF46qIIgLmOddFoIOlYC8m-4XPbalmOuEnw/exec"; 
+        
         let data = { repetitive: [], specific: [], history: {}, currentView: 'month' };
 
+        const getToday = () => new Date().toLocaleDateString('en-CA');
+
         async function sync(action) {
-            if(SHEET_URL.includes("PASTE")) return;
+            if(!SHEET_URL || SHEET_URL.includes("PASTE")) return;
             document.getElementById('syncStatus').innerText = "☁️ SYNCING...";
             try {
-                if(action === 'save') await fetch(SHEET_URL, { method: "POST", body: JSON.stringify(data) });
-                else {
+                if(action === 'save') {
+                    await fetch(SHEET_URL, { method: "POST", body: JSON.stringify(data) });
+                } else {
                     const res = await fetch(SHEET_URL);
                     const cloudData = await res.json();
-                    if(cloudData.history) data = cloudData;
+                    if(cloudData && cloudData.history) data = cloudData;
                 }
                 document.getElementById('syncStatus').innerText = "☁️ CLOUD SYNCED";
-            } catch(e) { document.getElementById('syncStatus').innerText = "☁️ LOCAL MODE"; }
+            } catch(e) { 
+                document.getElementById('syncStatus').innerText = "☁️ SYNC FAILED"; 
+                console.error(e);
+            }
         }
 
-        const getToday = () => new Date().toLocaleDateString('en-CA');
-        window.onload = async () => { document.getElementById('globalDatePicker').value = getToday(); await sync('load'); render(); };
-        
+        window.onload = async () => {
+            document.getElementById('globalDatePicker').value = getToday();
+            await sync('load');
+            render();
+        };
+
         function changeView(v) { data.currentView = v; render(); }
         
         async function addTask(type) {
             const date = document.getElementById('globalDatePicker').value;
-            if (date < getToday()) return;
             const input = document.getElementById(type === 'repetitive' ? 'repInput' : 'specInput');
             if (!input.value.trim()) return;
             if (type === 'repetitive') data.repetitive.push({ text: input.value, createdAt: date, completions: [] });
@@ -110,38 +118,41 @@
         }
 
         async function toggleTask(type, id, date) {
-            if (date !== getToday()) return;
-            if (type === 'specific') { const item = data.specific.find(t => t.text === id && t.date === date); if(item) item.completed = !item.completed; }
-            else { const item = data.repetitive[id]; item.completions.includes(date) ? item.completions = item.completions.filter(d => d !== date) : item.completions.push(date); }
+            if (type === 'specific') {
+                const item = data.specific.find(t => t.text === id && t.date === date);
+                if(item) item.completed = !item.completed;
+            } else {
+                const item = data.repetitive[id];
+                item.completions.includes(date) ? item.completions = item.completions.filter(d => d !== date) : item.completions.push(date);
+            }
             render(); await sync('save');
-            if (data.history[date] >= 100) confetti({ particleCount: 150, spread: 60, origin: { y: 0.7 }, colors: ['#39ff14', '#fff01f'] });
+            if (data.history[date] >= 100) confetti({ particleCount: 150, spread: 60, origin: { y: 0.7 } });
         }
 
         function render() {
             const selDate = document.getElementById('globalDatePicker').value;
-            const today = getToday();
-            document.getElementById('currentDateDisplay').innerText = new Date(selDate).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
-            document.getElementById('viewHeading').innerText = data.currentView === 'year' ? new Date(selDate).getFullYear() : new Date(selDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            const dateObj = new Date(selDate);
+            document.getElementById('currentDateDisplay').innerText = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+            document.getElementById('viewHeading').innerText = data.currentView === 'year' ? dateObj.getFullYear() : dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
             const isYear = data.currentView === 'year';
-            document.getElementById('btn-month').className = `px-4 py-1 text-[10px] font-black rounded ${!isYear ? 'bg-green-400 text-black' : 'text-gray-500'}`;
-            document.getElementById('btn-year').className = `px-4 py-1 text-[10px] font-black rounded ${isYear ? 'bg-green-400 text-black' : 'text-gray-500'}`;
+            document.getElementById('btn-month').className = `px-4 py-1 text-[10px] font-black rounded ${!isYear ? 'bg-green-400 text-black shadow-[0_0_8px_#39ff14]' : 'text-gray-500'}`;
+            document.getElementById('btn-year').className = `px-4 py-1 text-[10px] font-black rounded ${isYear ? 'bg-green-400 text-black shadow-[0_0_8px_#39ff14]' : 'text-gray-500'}`;
 
-            [selDate, today].forEach(d => {
-                const rituals = data.repetitive.filter(r => r.createdAt <= d);
-                const specs = data.specific.filter(t => t.date === d);
-                const total = rituals.length + specs.length, done = rituals.filter(r => r.completions.includes(d)).length + specs.filter(t => t.completed).length;
-                if(total > 0) data.history[d] = (done / total) * 100;
-            });
+            const rituals = data.repetitive.filter(r => r.createdAt <= selDate);
+            const specs = data.specific.filter(t => t.date === selDate);
+            const total = rituals.length + specs.length, done = rituals.filter(r => r.completions.includes(selDate)).length + specs.filter(t => t.completed).length;
+            if(total > 0) data.history[selDate] = (done / total) * 100;
 
             const renderList = (id, list, type) => {
                 document.getElementById(id).innerHTML = list.length ? list.map((t, i) => {
                     const idx = type === 'specific' ? data.specific.indexOf(t) : data.repetitive.indexOf(t);
                     const isDone = type === 'specific' ? t.completed : t.completions.includes(selDate);
-                    return `<li class="flex items-center justify-between py-2 group"><div class="flex items-center gap-3"><input type="checkbox" ${selDate !== today ? 'disabled' : ''} class="w-5 h-5 accent-[#39ff14]" ${isDone ? 'checked' : ''} onclick="toggleTask('${type}', '${type==='specific'?t.text:idx}', '${selDate}')"><span class="${isDone ? 'line-through opacity-40' : 'text-white font-bold'} text-sm">${t.text}</span></div></li>`}).join('') : `<p class="py-4 text-center text-[10px] font-black opacity-30 uppercase italic">Empty</p>`;
+                    return `<li class="flex items-center justify-between py-2"><div class="flex items-center gap-3"><input type="checkbox" class="w-4 h-4 accent-[#39ff14]" ${isDone ? 'checked' : ''} onclick="toggleTask('${type}', '${type==='specific'?t.text:idx}', '${selDate}')"><span class="${isDone ? 'line-through opacity-40' : 'text-white font-bold'} text-xs">${t.text}</span></div></li>`
+                }).join('') : `<p class="py-4 text-center text-[10px] font-black opacity-30 uppercase">Empty</p>`;
             };
-            renderList('repList', data.repetitive.filter(r => r.createdAt <= selDate), 'repetitive');
-            renderList('specList', data.specific.filter(t => t.date === selDate), 'specific');
+            renderList('repList', rituals, 'repetitive');
+            renderList('specList', specs, 'specific');
 
             let streak = 0; let d_s = new Date();
             while(data.history[d_s.toLocaleDateString('en-CA')] >= 91) { streak++; d_s.setDate(d_s.getDate()-1); }
@@ -155,11 +166,11 @@
             const daysArr = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
             if (data.currentView === 'year') {
-                const yearWrapper = document.createElement('div'); yearWrapper.className = 'flex flex-col gap-3';
+                const yearWrapper = document.createElement('div'); yearWrapper.className = 'year-wrapper';
                 const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
                 const year = new Date(selDate).getFullYear();
                 const createRow = (start, end) => {
-                    const row = document.createElement('div'); row.className = 'year-row';
+                    const row = document.createElement('div'); row.className = 'year-row hide-scrollbar';
                     for(let i=start; i<end; i++) {
                         const mWrap = document.createElement('div'); mWrap.className = 'mini-month';
                         mWrap.innerHTML = `<span class="text-[8px] font-black mb-1 block text-center text-[#39ff14] uppercase">${months[i]}</span><div class="grid grid-cols-7 gap-1 text-[5px] text-gray-600 text-center mb-1"><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div><div>S</div></div>`;
@@ -173,7 +184,7 @@
                 yearWrapper.appendChild(createRow(0, 6)); yearWrapper.appendChild(createRow(6, 12));
                 container.appendChild(yearWrapper);
             } else {
-                const wrap = document.createElement('div'); wrap.className = 'max-w-[300px] mx-auto space-y-2';
+                const wrap = document.createElement('div'); wrap.className = 'max-w-[280px] mx-auto space-y-2';
                 const head = document.createElement('div'); head.className = 'calendar-grid text-[9px] font-black text-gray-600 text-center mb-1';
                 ['MON','TUE','WED','THU','FRI','SAT','SUN'].forEach(d => head.innerHTML += `<div>${d}</div>`);
                 wrap.appendChild(head);
@@ -196,8 +207,6 @@
             div.innerText = date.getDate(); div.onclick = () => { document.getElementById('globalDatePicker').value = dStr; render(); };
             return div;
         }
-
-        function clearData() { if(confirm("Erase all tracking?")) { data.history = {}; sync('save'); location.reload(); } }
     </script>
 </body>
 </html>
