@@ -12,27 +12,19 @@
         body { background-color: var(--bg); color: #e6edf3; font-family: 'Plus Jakarta Sans', sans-serif; }
         .app-container { width: 85vw; max-width: 1200px; margin: 0 auto; padding-bottom: 50px; }
         .sticky-header { position: sticky; top: 0; z-index: 100; background: #000; padding: 15px 0; border-bottom: 1px solid var(--border); }
-        
-        /* Grid System */
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
         .day-box { 
             aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; 
             font-weight: 800; cursor: pointer; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);
-            transition: all 0.2s ease;
+            transition: all 0.2s ease; font-size: 10px;
         }
-        .day-box:hover { transform: scale(1.05); z-index: 10; border-color: #58a6ff; }
-        
-        /* Colors */
         .c-empty { background: #161b22; color: #484f58; }
         .c-red { background: var(--red); color: #000; }
         .c-yellow { background: var(--yellow); color: #000; }
         .c-green { background: var(--green); color: #000; }
         .selected-day { outline: 2px solid #fff; outline-offset: 2px; box-shadow: 0 0 15px #fff; z-index: 20; }
-        
         .weekday-label { font-size: 10px; font-weight: 900; color: #8b949e; text-align: center; padding-bottom: 5px; }
         .mini-month { background: #0d1117; padding: 12px; border-radius: 12px; border: 1px solid var(--border); }
-        
-        input[type="date"] { color-scheme: dark; }
     </style>
 </head>
 <body class="p-4">
@@ -44,10 +36,10 @@
             
             <div class="flex flex-col md:flex-row justify-between items-center gap-4 bg-[#0d1117] p-5 rounded-2xl border border-gray-800 mt-4 shadow-2xl">
                 <div class="text-left">
-                    <h2 id="displayDate" class="text-xl font-bold text-white leading-none">Loading...</h2>
+                    <h2 id="displayDate" class="text-xl font-bold text-white leading-none">...</h2>
                     <p class="text-yellow-400 font-black text-[10px] uppercase mt-2 tracking-widest">🔥 Streak: <span id="streakCount">0</span> Days</p>
                 </div>
-                <input type="date" id="datePicker" onchange="render()" class="bg-black border border-gray-700 p-2.5 rounded-xl text-sm font-bold text-white outline-none focus:border-blue-500">
+                <input type="date" id="datePicker" onchange="render()" class="bg-black border border-gray-700 p-2.5 rounded-xl text-sm font-bold text-white outline-none">
             </div>
         </div>
 
@@ -66,16 +58,16 @@
             <div class="bg-[#0d1117] rounded-3xl border border-gray-800 p-6">
                 <p class="text-[10px] font-black text-blue-400 uppercase mb-4 tracking-[0.2em]">🔄 Daily Rituals</p>
                 <div class="flex gap-2 mb-4">
-                    <input id="repIn" type="text" class="flex-1 bg-black border border-blue-900/50 p-4 rounded-2xl text-sm text-white outline-none focus:border-blue-500" placeholder="E.g. 5am Wake Up">
-                    <button onclick="addHabit('rep')" class="bg-blue-600 text-white px-6 rounded-2xl font-black hover:scale-105 transition">+</button>
+                    <input id="repIn" type="text" class="flex-1 bg-black border border-blue-900/50 p-4 rounded-2xl text-sm text-white outline-none" placeholder="Habit...">
+                    <button onclick="addHabit('rep')" class="bg-blue-600 text-white px-6 rounded-2xl font-black">+</button>
                 </div>
                 <ul id="repList" class="space-y-3"></ul>
             </div>
             <div class="bg-[#0d1117] rounded-3xl border border-gray-800 p-6">
                 <p class="text-[10px] font-black text-purple-400 uppercase mb-4 tracking-[0.2em]">🎯 Specific Tasks</p>
                 <div class="flex gap-2 mb-4">
-                    <input id="specIn" type="text" class="flex-1 bg-black border border-purple-900/50 p-4 rounded-2xl text-sm text-white outline-none focus:border-purple-500" placeholder="E.g. Submit Report">
-                    <button onclick="addHabit('spec')" class="bg-purple-600 text-white px-6 rounded-2xl font-black hover:scale-105 transition">+</button>
+                    <input id="specIn" type="text" class="flex-1 bg-black border border-purple-900/50 p-4 rounded-2xl text-sm text-white outline-none" placeholder="Task...">
+                    <button onclick="addHabit('spec')" class="bg-purple-600 text-white px-6 rounded-2xl font-black">+</button>
                 </div>
                 <ul id="specList" class="space-y-3"></ul>
             </div>
@@ -83,15 +75,15 @@
     </div>
 
     <script>
-        // DB FUNCTIONS (Unchanged as requested)
         const SHEET_URL = "https://script.google.com/macros/s/AKfycbxJvcN0ZrrTVxFvqsTytAabThvdp_U24Vn-WAY7-fND4uWtFqaTxANQ86oaFpp0f4qBug/exec";
         let data = { habits: [], tasks: [], history: {}, view: 'month' };
 
+        // HELPER: Convert Date to YYYY-MM-DD
         const toKey = (d) => {
-            let month = '' + (d.getMonth() + 1), day = '' + d.getDate(), year = d.getFullYear();
-            if (month.length < 2) month = '0' + month;
-            if (day.length < 2) day = '0' + day;
-            return [year, month, day].join('-');
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
         };
 
         async function sync(type) {
@@ -112,7 +104,6 @@
             } catch(e) { status.innerText = "⚠️ LOCAL MODE"; render(); }
         }
 
-        // CALENDAR ENGINE
         function setView(v) { data.view = v; render(); }
 
         function addHabit(type) {
@@ -138,46 +129,47 @@
 
         function render() {
             const selStr = document.getElementById('datePicker').value;
-            const parts = selStr.split('-');
-            const dateObj = new Date(parts, parts-1, parts);
+            const [y, m, d] = selStr.split('-').map(Number);
+            const dateObj = new Date(y, m-1, d);
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-            // Fix Header Labels
-            document.getElementById('displayDate').innerText = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-            document.getElementById('viewLabel').innerText = data.view === 'year' ? parts : dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            // FIX: TOP DATE DISPLAY
+            document.getElementById('displayDate').innerText = `${days[dateObj.getDay()]}, ${monthNames[dateObj.getMonth()]} ${d}`;
+            document.getElementById('viewLabel').innerText = data.view === 'year' ? y : `${monthNames[m-1]} ${y}`;
 
-            // UI State
+            // VIEW BUTTONS
             document.getElementById('btn-month').className = `px-6 py-2 text-xs font-black rounded-lg transition-all ${data.view === 'month' ? 'bg-green-400 text-black shadow-[0_0_15px_#39ff14]' : 'bg-transparent text-gray-500'}`;
             document.getElementById('btn-year').className = `px-6 py-2 text-xs font-black rounded-lg transition-all ${data.view === 'year' ? 'bg-green-400 text-black shadow-[0_0_15px_#39ff14]' : 'bg-transparent text-gray-500'}`;
 
-            // Calculate Progress & Streak
+            // PROGRESS CALC
             const rituals = data.habits.filter(h => h.start <= selStr);
             const tasks = data.tasks.filter(t => t.date === selStr);
             const total = rituals.length + tasks.length;
             const done = rituals.filter(h => h.done.includes(selStr)).length + tasks.filter(t => t.completed).length;
             if(total > 0) data.history[selStr] = Math.round((done/total)*100);
 
+            // STREAK
             let s = 0; let check = new Date();
             while(data.history[toKey(check)] >= 90) { s++; check.setDate(check.getDate()-1); }
             document.getElementById('streakCount').innerText = s;
 
-            // Render Lists
+            // LISTS
             const listHtml = (list, type) => list.map(item => {
                 const gIdx = type === 'rep' ? data.habits.indexOf(item) : data.tasks.indexOf(item);
                 const isDone = type === 'rep' ? item.done.includes(selStr) : item.completed;
-                return `<li class="flex items-center justify-between p-4 bg-black rounded-2xl border border-gray-800 transition-all">
-                    <div class="flex items-center gap-4">
-                        <input type="checkbox" ${isDone ? 'checked' : ''} onclick="toggle('${type}', ${gIdx})" class="w-6 h-6 accent-green-400 rounded-full cursor-pointer">
-                        <span class="text-sm font-bold ${isDone ? 'line-through opacity-30' : 'text-white'}">${item.text}</span>
-                    </div>
+                return `<li class="flex items-center gap-4 p-4 bg-black rounded-2xl border border-gray-800">
+                    <input type="checkbox" ${isDone ? 'checked' : ''} onclick="toggle('${type}', ${gIdx})" class="w-6 h-6 accent-green-400">
+                    <span class="text-sm font-bold ${isDone ? 'line-through opacity-30' : 'text-white'}">${item.text}</span>
                 </li>`;
             }).join('');
             document.getElementById('repList').innerHTML = listHtml(rituals, 'rep');
             document.getElementById('specList').innerHTML = listHtml(tasks, 'spec');
 
-            renderGrid(parts, parts, selStr);
+            renderGrid(y, m, selStr);
         }
 
-        function renderGrid(y, m, selStr) {
+        function renderGrid(year, month, selStr) {
             const container = document.getElementById('gridContainer');
             container.innerHTML = '';
             const weekdays = ['M','T','W','T','F','S','S'];
@@ -185,22 +177,22 @@
             if(data.view === 'year') {
                 const wrap = document.createElement('div');
                 wrap.className = "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4";
-                const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                const monthsShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
                 
-                months.forEach((name, i) => {
+                monthsShort.forEach((name, i) => {
                     const mDiv = document.createElement('div');
                     mDiv.className = "mini-month";
                     mDiv.innerHTML = `<p class="text-[10px] font-black text-center mb-3 text-green-400 uppercase tracking-widest">${name}</p>`;
                     const grid = document.createElement('div'); grid.className = "calendar-grid";
                     weekdays.forEach(d => grid.innerHTML += `<div class="weekday-label">${d}</div>`);
                     
-                    const firstDay = new Date(y, i, 1).getDay() || 7; // Monday = 1
-                    const daysInMonth = new Date(y, i+1, 0).getDate();
+                    const firstDay = new Date(year, i, 1).getDay() || 7; // Monday start fix
+                    const daysInMonth = new Date(year, i+1, 0).getDate();
                     
                     for(let e=1; e<firstDay; e++) grid.innerHTML += `<div></div>`;
                     for(let d=1; d<=daysInMonth; d++) {
-                        const dStr = `${y}-${String(i+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                        grid.appendChild(createBox(dStr, selStr, d, true));
+                        const dStr = `${year}-${String(i+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                        grid.appendChild(createBox(dStr, selStr, d));
                     }
                     mDiv.appendChild(grid); wrap.appendChild(mDiv);
                 });
@@ -210,31 +202,29 @@
                 grid.className = "calendar-grid max-w-lg mx-auto";
                 weekdays.forEach(d => grid.innerHTML += `<div class="weekday-label text-sm mb-2">${d}</div>`);
                 
-                const firstDay = new Date(y, m-1, 1).getDay() || 7;
-                const daysInMonth = new Date(y, m, 0).getDate();
+                const firstDay = new Date(year, month-1, 1).getDay() || 7;
+                const daysInMonth = new Date(year, month, 0).getDate();
                 
                 for(let e=1; e<firstDay; e++) grid.innerHTML += `<div></div>`;
                 for(let d=1; d<=daysInMonth; d++) {
-                    const dStr = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                    grid.appendChild(createBox(dStr, selStr, d, false));
+                    const dStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                    grid.appendChild(createBox(dStr, selStr, d));
                 }
                 container.appendChild(grid);
             }
         }
 
-        function createBox(dStr, selStr, dateNum, isYear) {
+        function createBox(dStr, selStr, dateNum) {
             const box = document.createElement('div');
             const pct = data.history[dStr] || 0;
             let color = 'c-empty';
             if(pct > 0) color = pct > 80 ? 'c-green' : (pct > 40 ? 'c-yellow' : 'c-red');
             
-            box.className = `day-box ${color} ${dStr === selStr ? 'selected-day' : ''} ${isYear ? 'text-[8px]' : 'text-xs h-12'}`;
+            box.className = `day-box ${color} ${dStr === selStr ? 'selected-day' : ''}`;
             box.innerText = dateNum;
-            box.onclick = (e) => {
-                e.stopPropagation();
+            box.onclick = () => {
                 document.getElementById('datePicker').value = dStr;
                 render();
-                sync('save'); // Auto-save when switching dates to ensure state is kept
             };
             return box;
         }
@@ -242,6 +232,7 @@
         window.onload = () => {
             const now = new Date();
             document.getElementById('datePicker').value = toKey(now);
+            render(); // RENDER ONCE IMMEDIATELY
             sync('load');
         };
     </script>
