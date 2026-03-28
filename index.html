@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Habit Manager</title>
+    <title>My Habit Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap" rel="stylesheet">
@@ -16,7 +16,7 @@
         ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--green); }
 
-        .app-container { width: 85vw; max-width: 1400px; margin: 0 auto; padding-bottom: 50px; }
+        .app-container { width: 85vw; max-width: 1400px; margin: 0 auto; padding-bottom: 30px; }
         .sticky-header { position: sticky; top: 0; z-index: 100; background: #000; padding: 15px 0; border-bottom: 1px solid var(--border); }
         
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
@@ -34,13 +34,16 @@
         
         .weekday-label { font-size: 8px; font-weight: 900; color: #8b949e; text-align: center; }
         
-        /* Fixed Year View Containers */
         .mini-month { background: #0d1117; padding: 10px; border-radius: 10px; border: 1px solid var(--border); flex: 1; min-width: 0; }
         .year-row { display: flex; gap: 10px; width: 100%; margin-bottom: 10px; }
         
+        .delete-btn { opacity: 0; transition: opacity 0.2s; color: #ff4444; font-weight: bold; padding: 0 8px; }
+        li:hover .delete-btn { opacity: 1; }
+
         @media (max-width: 768px) {
             .year-row { overflow-x: auto; flex-wrap: nowrap; }
             .mini-month { min-width: 140px; }
+            .delete-btn { opacity: 1; }
         }
     </style>
 </head>
@@ -96,6 +99,15 @@
                 <ul id="specList" class="space-y-2"></ul>
             </div>
         </div>
+
+        <div class="pt-10 flex flex-col items-center gap-4 border-t border-gray-900">
+            <button onclick="resetAllData()" class="px-6 py-2 bg-red-900/20 border border-red-500/50 text-red-500 text-[10px] font-black uppercase rounded-lg hover:bg-red-500 hover:text-black transition-all">
+                Reset All Data
+            </button>
+            <p class="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">
+                Made by <span class="text-blue-500">Ankit Banerjee</span>
+            </p>
+        </div>
     </div>
 
     <script>
@@ -145,6 +157,21 @@
             if(data.history[date] >= 100) confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
         }
 
+        function removeTask(type, index) {
+            if(confirm("Delete this item?")) {
+                if(type === 'rep') data.habits.splice(index, 1);
+                else data.tasks.splice(index, 1);
+                render(); sync('save');
+            }
+        }
+
+        function resetAllData() {
+            if(confirm("CRITICAL: This will permanently erase all habits, tasks, and history. Are you sure?")) {
+                data = { habits: [], tasks: [], history: {}, view: 'month' };
+                render(); sync('save');
+            }
+        }
+
         function render() {
             const selStr = document.getElementById('datePicker').value;
             const [y, m, d] = selStr.split('-').map(Number);
@@ -171,7 +198,13 @@
             const listHtml = (list, type) => list.map(item => {
                 const gIdx = type === 'rep' ? data.habits.indexOf(item) : data.tasks.indexOf(item);
                 const isDone = type === 'rep' ? item.done.includes(selStr) : item.completed;
-                return `<li class="flex items-center gap-3 p-3 bg-black rounded-xl border border-gray-800"><input type="checkbox" ${isDone ? 'checked' : ''} onclick="toggle('${type}', ${gIdx})" class="w-5 h-5 accent-green-400"><span class="text-xs font-bold ${isDone ? 'line-through opacity-30' : 'text-white'}">${item.text}</span></li>`;
+                return `<li class="flex items-center justify-between p-3 bg-black rounded-xl border border-gray-800">
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" ${isDone ? 'checked' : ''} onclick="toggle('${type}', ${gIdx})" class="w-5 h-5 accent-green-400">
+                        <span class="text-xs font-bold ${isDone ? 'line-through opacity-30' : 'text-white'}">${item.text}</span>
+                    </div>
+                    <button onclick="removeTask('${type}', ${gIdx})" class="delete-btn text-[10px]">✕</button>
+                </li>`;
             }).join('');
             document.getElementById('repList').innerHTML = listHtml(rituals, 'rep');
             document.getElementById('specList').innerHTML = listHtml(tasks, 'spec');
