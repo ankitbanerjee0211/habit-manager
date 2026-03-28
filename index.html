@@ -10,66 +10,88 @@
     <style>
         :root { --bg: #000; --green: #39ff14; --red: #ff3131; --yellow: #fff01f; --border: #1f2328; }
         body { background-color: var(--bg); color: #e6edf3; font-family: 'Plus Jakarta Sans', sans-serif; }
+        
+        /* Custom Scrollbar for Mobile/Desktop */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--green); }
+
         .app-container { width: 85vw; max-width: 1200px; margin: 0 auto; padding-bottom: 50px; }
         .sticky-header { position: sticky; top: 0; z-index: 100; background: #000; padding: 15px 0; border-bottom: 1px solid var(--border); }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        
+        /* Grid System */
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
         .day-box { 
             aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; 
-            font-weight: 800; cursor: pointer; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);
-            transition: all 0.2s ease; font-size: 10px;
+            font-weight: 800; cursor: pointer; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.2s ease;
         }
+        
+        /* Colors */
         .c-empty { background: #161b22; color: #484f58; }
         .c-red { background: var(--red); color: #000; }
         .c-yellow { background: var(--yellow); color: #000; }
         .c-green { background: var(--green); color: #000; }
-        .selected-day { outline: 2px solid #fff; outline-offset: 2px; box-shadow: 0 0 15px #fff; z-index: 20; }
-        .weekday-label { font-size: 10px; font-weight: 900; color: #8b949e; text-align: center; padding-bottom: 5px; }
-        .mini-month { background: #0d1117; padding: 12px; border-radius: 12px; border: 1px solid var(--border); }
+        .selected-day { outline: 2px solid #fff; outline-offset: 1px; box-shadow: 0 0 10px #fff; z-index: 20; }
+        
+        .weekday-label { font-size: 8px; font-weight: 900; color: #8b949e; text-align: center; }
+        
+        /* Layout Adjustments */
+        .mini-month { background: #0d1117; padding: 8px; border-radius: 10px; border: 1px solid var(--border); min-width: 130px; }
+        .year-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; }
     </style>
 </head>
-<body class="p-4">
+<body class="p-2 md:p-4">
 
     <div class="app-container space-y-6">
         <div class="sticky-header text-center">
-            <h1 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 uppercase italic tracking-tighter">Habit Manager</h1>
-            <div id="syncStatus" class="text-[10px] font-black text-green-400 mt-1 opacity-50 uppercase tracking-[0.2em]">☁️ Connecting...</div>
+            <h1 class="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 uppercase italic tracking-tighter">Habit Manager</h1>
+            <div id="syncStatus" class="text-[9px] font-black text-green-400 mt-1 opacity-50 uppercase tracking-widest">☁️ Connecting...</div>
             
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4 bg-[#0d1117] p-5 rounded-2xl border border-gray-800 mt-4 shadow-2xl">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-3 bg-[#0d1117] p-4 rounded-2xl border border-gray-800 mt-4">
                 <div class="text-left">
-                    <h2 id="displayDate" class="text-xl font-bold text-white leading-none">...</h2>
-                    <p class="text-yellow-400 font-black text-[10px] uppercase mt-2 tracking-widest">🔥 Streak: <span id="streakCount">0</span> Days</p>
+                    <h2 id="displayDate" class="text-lg font-bold text-white leading-none">...</h2>
+                    <p class="text-yellow-400 font-black text-[10px] uppercase mt-1 tracking-widest">🔥 Streak: <span id="streakCount">0</span></p>
                 </div>
-                <input type="date" id="datePicker" onchange="render()" class="bg-black border border-gray-700 p-2.5 rounded-xl text-sm font-bold text-white outline-none">
+                <input type="date" id="datePicker" onchange="render()" class="bg-black border border-gray-700 p-2 rounded-xl text-xs font-bold text-white outline-none">
             </div>
         </div>
 
-        <div class="bg-[#0d1117] p-6 rounded-2xl border border-gray-800">
-            <div class="flex justify-between items-center mb-6">
-                <div class="flex bg-black p-1 rounded-xl border border-gray-800">
-                    <button onclick="setView('month')" id="btn-month" class="px-6 py-2 text-xs font-black rounded-lg transition-all">MONTH</button>
-                    <button onclick="setView('year')" id="btn-year" class="px-6 py-2 text-xs font-black rounded-lg transition-all">YEAR</button>
-                </div>
-                <h2 id="viewLabel" class="text-xs font-black uppercase text-gray-500 tracking-[0.3em]"></h2>
-            </div>
-            <div id="gridContainer"></div>
+        <div class="flex flex-wrap justify-center gap-4 text-[9px] font-bold uppercase tracking-widest text-gray-500 bg-[#0d1117] p-2 rounded-xl border border-gray-900">
+            <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-sm c-empty"></div> 0%</div>
+            <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-sm c-red"></div> 1-40%</div>
+            <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-sm c-yellow"></div> 41-80%</div>
+            <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-sm c-green"></div> 81-100%</div>
         </div>
 
-        <div class="grid lg:grid-cols-2 gap-6">
-            <div class="bg-[#0d1117] rounded-3xl border border-gray-800 p-6">
-                <p class="text-[10px] font-black text-blue-400 uppercase mb-4 tracking-[0.2em]">🔄 Daily Rituals</p>
-                <div class="flex gap-2 mb-4">
-                    <input id="repIn" type="text" class="flex-1 bg-black border border-blue-900/50 p-4 rounded-2xl text-sm text-white outline-none" placeholder="Habit...">
-                    <button onclick="addHabit('rep')" class="bg-blue-600 text-white px-6 rounded-2xl font-black">+</button>
+        <div class="bg-[#0d1117] p-4 rounded-2xl border border-gray-800">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex bg-black p-1 rounded-lg border border-gray-800">
+                    <button onclick="setView('month')" id="btn-month" class="px-4 py-1.5 text-[10px] font-black rounded transition-all">MONTH</button>
+                    <button onclick="setView('year')" id="btn-year" class="px-4 py-1.5 text-[10px] font-black rounded transition-all">YEAR</button>
                 </div>
-                <ul id="repList" class="space-y-3"></ul>
+                <h2 id="viewLabel" class="text-[10px] font-black uppercase text-gray-500 tracking-widest"></h2>
             </div>
-            <div class="bg-[#0d1117] rounded-3xl border border-gray-800 p-6">
-                <p class="text-[10px] font-black text-purple-400 uppercase mb-4 tracking-[0.2em]">🎯 Specific Tasks</p>
-                <div class="flex gap-2 mb-4">
-                    <input id="specIn" type="text" class="flex-1 bg-black border border-purple-900/50 p-4 rounded-2xl text-sm text-white outline-none" placeholder="Task...">
-                    <button onclick="addHabit('spec')" class="bg-purple-600 text-white px-6 rounded-2xl font-black">+</button>
+            <div id="gridContainer" class="overflow-hidden"></div>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-4">
+            <div class="bg-[#0d1117] rounded-2xl border border-gray-800 p-4">
+                <p class="text-[10px] font-black text-blue-400 uppercase mb-3">🔄 Daily Rituals</p>
+                <div class="flex gap-2 mb-3">
+                    <input id="repIn" type="text" class="flex-1 bg-black border border-blue-900/50 p-3 rounded-xl text-xs text-white outline-none" placeholder="Habit...">
+                    <button onclick="addHabit('rep')" class="bg-blue-600 text-white px-4 rounded-xl font-black">+</button>
                 </div>
-                <ul id="specList" class="space-y-3"></ul>
+                <ul id="repList" class="space-y-2"></ul>
+            </div>
+            <div class="bg-[#0d1117] rounded-2xl border border-gray-800 p-4">
+                <p class="text-[10px] font-black text-purple-400 uppercase mb-3">🎯 Specific Tasks</p>
+                <div class="flex gap-2 mb-3">
+                    <input id="specIn" type="text" class="flex-1 bg-black border border-purple-900/50 p-3 rounded-xl text-xs text-white outline-none" placeholder="Task...">
+                    <button onclick="addHabit('spec')" class="bg-purple-600 text-white px-4 rounded-xl font-black">+</button>
+                </div>
+                <ul id="specList" class="space-y-2"></ul>
             </div>
         </div>
     </div>
@@ -78,13 +100,7 @@
         const SHEET_URL = "https://script.google.com/macros/s/AKfycbxJvcN0ZrrTVxFvqsTytAabThvdp_U24Vn-WAY7-fND4uWtFqaTxANQ86oaFpp0f4qBug/exec";
         let data = { habits: [], tasks: [], history: {}, view: 'month' };
 
-        // HELPER: Convert Date to YYYY-MM-DD
-        const toKey = (d) => {
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${y}-${m}-${day}`;
-        };
+        const toKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
         async function sync(type) {
             const status = document.getElementById('syncStatus');
@@ -92,7 +108,7 @@
                 if(type === 'save') {
                     status.innerText = "☁️ SAVING...";
                     await fetch(SHEET_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
-                    setTimeout(() => status.innerText = "✅ SAVED TO DRIVE", 800);
+                    setTimeout(() => status.innerText = "✅ SAVED", 800);
                 } else {
                     status.innerText = "☁️ LOADING...";
                     const res = await fetch(SHEET_URL + "?t=" + Date.now());
@@ -134,34 +150,26 @@
             const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
             const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-            // FIX: TOP DATE DISPLAY
             document.getElementById('displayDate').innerText = `${days[dateObj.getDay()]}, ${monthNames[dateObj.getMonth()]} ${d}`;
             document.getElementById('viewLabel').innerText = data.view === 'year' ? y : `${monthNames[m-1]} ${y}`;
 
-            // VIEW BUTTONS
-            document.getElementById('btn-month').className = `px-6 py-2 text-xs font-black rounded-lg transition-all ${data.view === 'month' ? 'bg-green-400 text-black shadow-[0_0_15px_#39ff14]' : 'bg-transparent text-gray-500'}`;
-            document.getElementById('btn-year').className = `px-6 py-2 text-xs font-black rounded-lg transition-all ${data.view === 'year' ? 'bg-green-400 text-black shadow-[0_0_15px_#39ff14]' : 'bg-transparent text-gray-500'}`;
+            document.getElementById('btn-month').className = `px-4 py-1.5 text-[10px] font-black rounded transition-all ${data.view === 'month' ? 'bg-green-400 text-black' : 'bg-transparent text-gray-500'}`;
+            document.getElementById('btn-year').className = `px-4 py-1.5 text-[10px] font-black rounded transition-all ${data.view === 'year' ? 'bg-green-400 text-black' : 'bg-transparent text-gray-500'}`;
 
-            // PROGRESS CALC
             const rituals = data.habits.filter(h => h.start <= selStr);
             const tasks = data.tasks.filter(t => t.date === selStr);
             const total = rituals.length + tasks.length;
             const done = rituals.filter(h => h.done.includes(selStr)).length + tasks.filter(t => t.completed).length;
             if(total > 0) data.history[selStr] = Math.round((done/total)*100);
 
-            // STREAK
             let s = 0; let check = new Date();
             while(data.history[toKey(check)] >= 90) { s++; check.setDate(check.getDate()-1); }
             document.getElementById('streakCount').innerText = s;
 
-            // LISTS
             const listHtml = (list, type) => list.map(item => {
                 const gIdx = type === 'rep' ? data.habits.indexOf(item) : data.tasks.indexOf(item);
                 const isDone = type === 'rep' ? item.done.includes(selStr) : item.completed;
-                return `<li class="flex items-center gap-4 p-4 bg-black rounded-2xl border border-gray-800">
-                    <input type="checkbox" ${isDone ? 'checked' : ''} onclick="toggle('${type}', ${gIdx})" class="w-6 h-6 accent-green-400">
-                    <span class="text-sm font-bold ${isDone ? 'line-through opacity-30' : 'text-white'}">${item.text}</span>
-                </li>`;
+                return `<li class="flex items-center gap-3 p-3 bg-black rounded-xl border border-gray-800"><input type="checkbox" ${isDone ? 'checked' : ''} onclick="toggle('${type}', ${gIdx})" class="w-5 h-5 accent-green-400"><span class="text-xs font-bold ${isDone ? 'line-through opacity-30' : 'text-white'}">${item.text}</span></li>`;
             }).join('');
             document.getElementById('repList').innerHTML = listHtml(rituals, 'rep');
             document.getElementById('specList').innerHTML = listHtml(tasks, 'spec');
@@ -169,71 +177,62 @@
             renderGrid(y, m, selStr);
         }
 
-        function renderGrid(year, month, selStr) {
+        function renderGrid(y, m, selStr) {
             const container = document.getElementById('gridContainer');
             container.innerHTML = '';
             const weekdays = ['M','T','W','T','F','S','S'];
 
             if(data.view === 'year') {
-                const wrap = document.createElement('div');
-                wrap.className = "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4";
+                const row1 = document.createElement('div'); row1.className = "year-row mb-2";
+                const row2 = document.createElement('div'); row2.className = "year-row";
                 const monthsShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
                 
                 monthsShort.forEach((name, i) => {
-                    const mDiv = document.createElement('div');
-                    mDiv.className = "mini-month";
-                    mDiv.innerHTML = `<p class="text-[10px] font-black text-center mb-3 text-green-400 uppercase tracking-widest">${name}</p>`;
+                    const mDiv = document.createElement('div'); mDiv.className = "mini-month";
+                    mDiv.innerHTML = `<p class="text-[9px] font-black text-center mb-2 text-green-400 uppercase">${name}</p>`;
                     const grid = document.createElement('div'); grid.className = "calendar-grid";
                     weekdays.forEach(d => grid.innerHTML += `<div class="weekday-label">${d}</div>`);
-                    
-                    const firstDay = new Date(year, i, 1).getDay() || 7; // Monday start fix
-                    const daysInMonth = new Date(year, i+1, 0).getDate();
-                    
+                    const firstDay = new Date(y, i, 1).getDay() || 7;
+                    const daysInMonth = new Date(y, i+1, 0).getDate();
                     for(let e=1; e<firstDay; e++) grid.innerHTML += `<div></div>`;
                     for(let d=1; d<=daysInMonth; d++) {
-                        const dStr = `${year}-${String(i+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                        grid.appendChild(createBox(dStr, selStr, d));
+                        const dStr = `${y}-${String(i+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                        grid.appendChild(createBox(dStr, selStr, d, true));
                     }
-                    mDiv.appendChild(grid); wrap.appendChild(mDiv);
+                    mDiv.appendChild(grid);
+                    (i < 6) ? row1.appendChild(mDiv) : row2.appendChild(mDiv);
                 });
-                container.appendChild(wrap);
+                container.appendChild(row1); container.appendChild(row2);
             } else {
                 const grid = document.createElement('div');
-                grid.className = "calendar-grid max-w-lg mx-auto";
-                weekdays.forEach(d => grid.innerHTML += `<div class="weekday-label text-sm mb-2">${d}</div>`);
-                
-                const firstDay = new Date(year, month-1, 1).getDay() || 7;
-                const daysInMonth = new Date(year, month, 0).getDate();
-                
+                grid.className = "calendar-grid max-w-[280px] mx-auto"; // 50% smaller Month View
+                weekdays.forEach(d => grid.innerHTML += `<div class="weekday-label text-[9px] mb-1">${d}</div>`);
+                const firstDay = new Date(y, m-1, 1).getDay() || 7;
+                const daysInMonth = new Date(y, m, 0).getDate();
                 for(let e=1; e<firstDay; e++) grid.innerHTML += `<div></div>`;
                 for(let d=1; d<=daysInMonth; d++) {
-                    const dStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                    grid.appendChild(createBox(dStr, selStr, d));
+                    const dStr = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                    grid.appendChild(createBox(dStr, selStr, d, false));
                 }
                 container.appendChild(grid);
             }
         }
 
-        function createBox(dStr, selStr, dateNum) {
+        function createBox(dStr, selStr, dateNum, isYear) {
             const box = document.createElement('div');
             const pct = data.history[dStr] || 0;
             let color = 'c-empty';
             if(pct > 0) color = pct > 80 ? 'c-green' : (pct > 40 ? 'c-yellow' : 'c-red');
-            
-            box.className = `day-box ${color} ${dStr === selStr ? 'selected-day' : ''}`;
+            box.className = `day-box ${color} ${dStr === selStr ? 'selected-day' : ''} ${isYear ? 'text-[7px]' : 'text-[9px]'}`;
             box.innerText = dateNum;
-            box.onclick = () => {
-                document.getElementById('datePicker').value = dStr;
-                render();
-            };
+            box.onclick = () => { document.getElementById('datePicker').value = dStr; render(); };
             return box;
         }
 
         window.onload = () => {
             const now = new Date();
             document.getElementById('datePicker').value = toKey(now);
-            render(); // RENDER ONCE IMMEDIATELY
-            sync('load');
+            render(); sync('load');
         };
     </script>
 </body>
