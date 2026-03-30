@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Habit Manager</title>
+    <title>Professional Habit Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap" rel="stylesheet">
@@ -39,6 +39,10 @@
         
         .delete-btn { opacity: 0; transition: opacity 0.2s; color: #ff4444; font-weight: bold; padding: 0 8px; }
         li:hover .delete-btn { opacity: 1; }
+
+        /* Validation Styles */
+        input:disabled, button:disabled { opacity: 0.2; cursor: not-allowed !important; }
+        .future-lock { opacity: 0.5; pointer-events: none; }
 
         @media (max-width: 768px) {
             .year-row { overflow-x: auto; flex-wrap: nowrap; }
@@ -86,7 +90,7 @@
                 <p class="text-[10px] font-black text-blue-400 uppercase mb-3">🔄 Daily Rituals</p>
                 <div class="flex gap-2 mb-3">
                     <input id="repIn" type="text" class="flex-1 bg-black border border-blue-900/50 p-3 rounded-xl text-xs text-white outline-none" placeholder="Habit...">
-                    <button onclick="addHabit('rep')" class="bg-blue-600 text-white px-4 rounded-xl font-black">+</button>
+                    <button id="repBtn" onclick="addHabit('rep')" class="bg-blue-600 text-white px-4 rounded-xl font-black">+</button>
                 </div>
                 <ul id="repList" class="space-y-2"></ul>
             </div>
@@ -94,7 +98,7 @@
                 <p class="text-[10px] font-black text-purple-400 uppercase mb-3">🎯 Specific Tasks</p>
                 <div class="flex gap-2 mb-3">
                     <input id="specIn" type="text" class="flex-1 bg-black border border-purple-900/50 p-3 rounded-xl text-xs text-white outline-none" placeholder="Task...">
-                    <button onclick="addHabit('spec')" class="bg-purple-600 text-white px-4 rounded-xl font-black">+</button>
+                    <button id="specBtn" onclick="addHabit('spec')" class="bg-purple-600 text-white px-4 rounded-xl font-black">+</button>
                 </div>
                 <ul id="specList" class="space-y-2"></ul>
             </div>
@@ -115,6 +119,7 @@
         let data = { habits: [], tasks: [], history: {}, view: 'month' };
 
         const toKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const getTodayKey = () => toKey(new Date());
 
         async function sync(type) {
             const status = document.getElementById('syncStatus');
@@ -137,16 +142,30 @@
         function setView(v) { data.view = v; render(); }
 
         function addHabit(type) {
+            const date = document.getElementById('datePicker').value;
+            // VALIDATION 1: Cannot enter for past date
+            if (date < getTodayKey()) {
+                alert("Cannot add habits/tasks to a past date.");
+                return;
+            }
+
             const input = document.getElementById(type === 'rep' ? 'repIn' : 'specIn');
             if(!input.value.trim()) return;
-            const date = document.getElementById('datePicker').value;
+            
             if(type === 'rep') data.habits.push({ text: input.value, start: date, done: [] });
             else data.tasks.push({ text: input.value, date: date, completed: false });
+            
             input.value = ''; render(); sync('save');
         }
 
         function toggle(type, index) {
             const date = document.getElementById('datePicker').value;
+            // VALIDATION 2: Cannot check boxes for future date
+            if (date > getTodayKey()) {
+                alert("Cannot complete tasks for a future date.");
+                return;
+            }
+
             if(type === 'rep') {
                 const h = data.habits[index];
                 h.done.includes(date) ? h.done = h.done.filter(d => d !== date) : h.done.push(date);
@@ -166,7 +185,7 @@
         }
 
         function resetAllData() {
-            if(confirm("CRITICAL: This will permanently erase all habits, tasks, and history. Are you sure?")) {
+            if(confirm("CRITICAL: Erase everything?")) {
                 data = { habits: [], tasks: [], history: {}, view: 'month' };
                 render(); sync('save');
             }
@@ -174,6 +193,7 @@
 
         function render() {
             const selStr = document.getElementById('datePicker').value;
+            const todayStr = getTodayKey();
             const [y, m, d] = selStr.split('-').map(Number);
             const dateObj = new Date(y, m-1, d);
             const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -182,6 +202,14 @@
             document.getElementById('displayDate').innerText = `${days[dateObj.getDay()]}, ${monthNames[dateObj.getMonth()]} ${d}`;
             document.getElementById('viewLabel').innerText = data.view === 'year' ? y : `${monthNames[m-1]} ${y}`;
 
+            // Validation UI: Disable inputs if past
+            const isPast = selStr < todayStr;
+            document.getElementById('repIn').disabled = isPast;
+            document.getElementById('specIn').disabled = isPast;
+            document.getElementById('repBtn').disabled = isPast;
+            document.getElementById('specBtn').disabled = isPast;
+
+            // View Switchers
             document.getElementById('btn-month').className = `px-4 py-1.5 text-[10px] font-black rounded transition-all ${data.view === 'month' ? 'bg-green-400 text-black' : 'bg-transparent text-gray-500'}`;
             document.getElementById('btn-year').className = `px-4 py-1.5 text-[10px] font-black rounded transition-all ${data.view === 'year' ? 'bg-green-400 text-black' : 'bg-transparent text-gray-500'}`;
 
@@ -195,12 +223,15 @@
             while(data.history[toKey(check)] >= 90) { s++; check.setDate(check.getDate()-1); }
             document.getElementById('streakCount').innerText = s;
 
+            // Validation UI: Disable checkboxes if future
+            const isFuture = selStr > todayStr;
+
             const listHtml = (list, type) => list.map(item => {
                 const gIdx = type === 'rep' ? data.habits.indexOf(item) : data.tasks.indexOf(item);
                 const isDone = type === 'rep' ? item.done.includes(selStr) : item.completed;
-                return `<li class="flex items-center justify-between p-3 bg-black rounded-xl border border-gray-800">
+                return `<li class="flex items-center justify-between p-3 bg-black rounded-xl border border-gray-800 ${isFuture ? 'future-lock' : ''}">
                     <div class="flex items-center gap-3">
-                        <input type="checkbox" ${isDone ? 'checked' : ''} onclick="toggle('${type}', ${gIdx})" class="w-5 h-5 accent-green-400">
+                        <input type="checkbox" ${isDone ? 'checked' : ''} ${isFuture ? 'disabled' : ''} onclick="toggle('${type}', ${gIdx})" class="w-5 h-5 accent-green-400">
                         <span class="text-xs font-bold ${isDone ? 'line-through opacity-30' : 'text-white'}">${item.text}</span>
                     </div>
                     <button onclick="removeTask('${type}', ${gIdx})" class="delete-btn text-[10px]">✕</button>
